@@ -1,0 +1,10 @@
+CREATE CONSTRAINT idc_cmdb_key IF NOT EXISTS FOR (n:IDC) REQUIRE n.cmdb_key IS UNIQUE;
+CREATE CONSTRAINT np_cmdb_key IF NOT EXISTS FOR (n:NetPartition) REQUIRE n.cmdb_key IS UNIQUE;
+CREATE CONSTRAINT host_cmdb_key IF NOT EXISTS FOR (n:HostMachine) REQUIRE n.cmdb_key IS UNIQUE;
+CREATE CONSTRAINT physical_cmdb_key IF NOT EXISTS FOR (n:PhysicalMachine) REQUIRE n.cmdb_key IS UNIQUE;
+CREATE CONSTRAINT vm_cmdb_key IF NOT EXISTS FOR (n:VirtualMachine) REQUIRE n.cmdb_key IS UNIQUE;
+CREATE CONSTRAINT app_cmdb_key IF NOT EXISTS FOR (n:App) REQUIRE n.cmdb_key IS UNIQUE;
+CREATE INDEX vm_host_ip IF NOT EXISTS FOR (n:VirtualMachine) ON (n.host_ip);
+CREATE INDEX host_ip IF NOT EXISTS FOR (n:HostMachine) ON (n.ip);
+CREATE INDEX physical_ip IF NOT EXISTS FOR (n:PhysicalMachine) ON (n.ip);
+CREATE INDEX app_ip IF NOT EXISTS FOR (n:App) ON (n.ip);

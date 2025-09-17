@@ -1,0 +1,13 @@
+version: '3.9'
+services:
+  neo4j:
+    image: neo4j:5.22
+    environment:
+      NEO4J_AUTH: neo4j/neo4j
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    volumes:
+      - neo4j_data:/data
+volumes:
+  neo4j_data:

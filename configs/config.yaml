@@ -1,0 +1,12 @@
+neo4j:
+  uri: bolt://localhost:7687
+  username: neo4j
+  password: neo4j
+  database: neo4j
+  max_connection_pool_size: 10
+sync:
+  batch_size: 100
+  parallel_workers: 4
+  retry:
+    attempts: 3
+    backoff_seconds: 2
