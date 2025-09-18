@@ -1,0 +1,52 @@
+[
+  {
+    "id": 40001,
+    "ip": "172.16.20.101",
+    "name": "order-service"
+  },
+  {
+    "id": 40002,
+    "ip": "172.16.20.102",
+    "name": "payment-service"
+  },
+  {
+    "id": 40003,
+    "ip": "172.16.20.201",
+    "name": "inventory-service"
+  },
+  {
+    "id": 40004,
+    "ip": "172.16.20.202",
+    "name": "user-service"
+  },
+  {
+    "id": 40005,
+    "ip": "172.16.20.301",
+    "name": "report-service"
+  },
+  {
+    "id": 40006,
+    "ip": "172.16.20.302",
+    "name": "log-service"
+  },
+  {
+    "id": 40007,
+    "ip": "172.16.21.101",
+    "name": "auth-service"
+  },
+  {
+    "id": 40008,
+    "ip": "172.16.21.102",
+    "name": "config-service"
+  },
+  {
+    "id": 40009,
+    "ip": "172.16.21.201",
+    "name": "monitor-service"
+  },
+  {
+    "id": 40010,
+    "ip": "172.16.21.202",
+    "name": "alert-service"
+  }
+]

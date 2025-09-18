@@ -1,13 +1,18 @@
-version: '3.9'
+version: '3.8'
+
 services:
   neo4j:
-    image: neo4j:5.22
-    environment:
-      NEO4J_AUTH: neo4j/neo4j
+    image: neo4j:5.23
+    container_name: neo4j
+    restart: unless-stopped
     ports:
-      - "7687:7687"
-      - "7474:7474"
+      - "7474:7474"   # HTTP Web 界面
+      - "7687:7687"   # Bolt 协议，供驱动访问
+    environment:
+      - NEO4J_AUTH=neo4j/StrongPassw0rd   # 用户名/密码
+      - NEO4J_PLUGINS=["apoc"]            # 启用 APOC 插件
     volumes:
-      - neo4j_data:/data
-volumes:
-  neo4j_data:
+      - ./data:/data
+      - ./logs:/logs
+      - ./import:/import
+      - ./plugins:/plugins

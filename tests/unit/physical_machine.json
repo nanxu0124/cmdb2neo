@@ -1,0 +1,42 @@
+[
+  {
+    "id": 30001,
+    "idc": "M5",
+    "network_partition": "研发测试区",
+    "server_type": 3,
+    "ip": "172.16.30.10",
+    "host_name": "M5-phy-host-01"
+  },
+  {
+    "id": 30002,
+    "idc": "M5",
+    "network_partition": "研发测试区",
+    "server_type": 3,
+    "ip": "172.16.30.20",
+    "host_name": "M5-phy-host-02"
+  },
+  {
+    "id": 30003,
+    "idc": "M5",
+    "network_partition": "研发测试区",
+    "server_type": 3,
+    "ip": "172.16.30.30",
+    "host_name": "M5-phy-host-03"
+  },
+  {
+    "id": 30004,
+    "idc": "M5",
+    "network_partition": "生产区",
+    "server_type": 3,
+    "ip": "172.16.31.10",
+    "host_name": "M5-phy-host-04"
+  },
+  {
+    "id": 30005,
+    "idc": "M5",
+    "network_partition": "生产区",
+    "server_type": 3,
+    "ip": "172.16.31.20",
+    "host_name": "M5-phy-host-05"
+  }
+]

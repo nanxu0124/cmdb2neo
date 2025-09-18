@@ -2,29 +2,33 @@ package app
 
 import (
 	"fmt"
-	"os"
-
 	"gopkg.in/yaml.v3"
+	"os"
 )
 
-// Config 对应配置文件结构。
+type Neo4j struct {
+	URI                  string `yaml:"uri"`
+	Username             string `yaml:"username"`
+	Password             string `yaml:"password"`
+	Database             string `yaml:"database"`
+	MaxConnectionPool    int    `yaml:"max_connections"`
+	ConnectTimeoutSecond int    `yaml:"connect_timeout_second"`
+}
+
+type Sync struct {
+	BatchSize       int   `yaml:"batch_size"`
+	ParallelWorkers int   `yaml:"parallel_workers"`
+	Retry           Retry `yaml:"retry"`
+}
+
+type Retry struct {
+	Attempts       int `yaml:"attempts"`
+	BackoffSeconds int `yaml:"backoff_seconds"`
+}
+
 type Config struct {
-	Neo4j struct {
-		URI                  string `yaml:"uri"
-		Username             string `yaml:"username"
-		Password             string `yaml:"password"
-		Database             string `yaml:"database"
-		MaxConnectionPool    int    `yaml:"max_connection_pool_size"
-		ConnectTimeoutSecond int    `yaml:"connect_timeout_second"
-	} `yaml:"neo4j"
-	Sync struct {
-		BatchSize       int `yaml:"batch_size"
-		ParallelWorkers int `yaml:"parallel_workers"
-		Retry struct {
-			Attempts      int `yaml:"attempts"
-			BackoffSecond int `yaml:"backoff_seconds"
-		} `yaml:"retry"
-	} `yaml:"sync"
+	Neo4j Neo4j `yaml:"neo4j"`
+	Sync  Sync  `yaml:"sync"`
 }
 
 // LoadConfig 从文件加载配置。
