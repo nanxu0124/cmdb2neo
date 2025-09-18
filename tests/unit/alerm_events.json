@@ -1,212 +1,22 @@
 [
   {
-    "app": "auth-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.10",
-    "hostname": "M5-VM-172.16.21.101",
-    "ip": "172.16.21.101",
-    "network_partition": "生产区",
-    "rulename": "生成-hostIOWait（宿主机IO等待过高）",
-    "time": "2025-09-19T17:36:22.279076Z"
-  },
-  {
-    "app": "config-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.10",
-    "hostname": "M5-VM-172.16.21.102",
-    "ip": "172.16.21.102",
-    "network_partition": "生产区",
-    "rulename": "生成-hostIOWait（宿主机IO等待过高）",
-    "time": "2025-09-19T17:36:22.279076Z"
-  },
-  {
-    "app": "order-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.20",
-    "hostname": "M5-VM-172.16.20.201",
-    "ip": "172.16.20.201",
-    "network_partition": "研发测试区",
-    "rulename": "生成-highCPU（CPU使用率过高）",
-    "time": "2025-09-19T17:51:22.279076Z"
-  },
-  {
-    "app": "config-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.10",
-    "hostname": "M5-VM-172.16.21.102",
-    "ip": "172.16.21.102",
-    "network_partition": "生产区",
-    "rulename": "生成-diskLatency（磁盘延迟异常）",
-    "time": "2025-09-19T17:39:22.279076Z"
-  },
-  {
-    "app": "payment-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.10",
-    "hostname": "M5-VM-172.16.20.102",
-    "ip": "172.16.20.102",
-    "network_partition": "研发测试区",
-    "rulename": "生成-instanceDown（服务关闭）",
-    "time": "2025-09-19T17:43:22.279076Z"
-  },
-  {
-    "app": "inventory-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.20",
-    "hostname": "M5-VM-172.16.20.201",
-    "ip": "172.16.20.201",
-    "network_partition": "研发测试区",
-    "rulename": "生成-serviceTimeout（服务超时）",
-    "time": "2025-09-19T17:44:22.279076Z"
-  },
-  {
-    "app": "auth-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.10",
-    "hostname": "M5-VM-172.16.21.101",
-    "ip": "172.16.21.101",
-    "network_partition": "生产区",
-    "rulename": "生成-diskLatency（磁盘延迟异常）",
-    "time": "2025-09-19T17:39:22.279076Z"
-  },
-  {
-    "app": "log-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.30",
-    "hostname": "M5-VM-172.16.20.302",
-    "ip": "172.16.20.302",
-    "network_partition": "研发测试区",
-    "rulename": "生成-serviceTimeout（服务超时）",
-    "time": "2025-09-19T17:55:22.279076Z"
-  },
-  {
-    "app": "order-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.10",
-    "hostname": "M5-VM-172.16.20.101",
+    "id": "evt-app-1",
+    "source": "monitor",
+    "priority": "P1",
+    "node_type": "App",
     "ip": "172.16.20.101",
-    "network_partition": "研发测试区",
-    "rulename": "生成-serviceTimeout（服务超时）",
-    "time": "2025-09-19T16:55:22.279076Z"
+    "host_ip": "172.16.10.10",
+    "service": "order-service",
+    "occurred_at": "2024-03-01T10:00:00Z"
   },
   {
-    "app": "report-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.30",
-    "hostname": "M5-VM-172.16.20.301",
-    "ip": "172.16.20.301",
-    "network_partition": "研发测试区",
-    "rulename": "生成-diskFull（磁盘已满）",
-    "time": "2025-09-19T17:13:22.279076Z"
-  },
-  {
-    "app": "config-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.10",
-    "hostname": "M5-VM-172.16.21.102",
-    "ip": "172.16.21.102",
-    "network_partition": "生产区",
-    "rulename": "生成-serviceTimeout（服务超时）",
-    "time": "2025-09-19T17:42:22.279076Z"
-  },
-  {
-    "app": "user-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.20",
-    "hostname": "M5-VM-172.16.20.202",
-    "ip": "172.16.20.202",
-    "network_partition": "研发测试区",
-    "rulename": "生成-serviceTimeout（服务超时）",
-    "time": "2025-09-19T16:20:22.279076Z"
-  },
-  {
-    "app": "config-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.10",
-    "hostname": "M5-VM-172.16.21.102",
-    "ip": "172.16.21.102",
-    "network_partition": "生产区",
-    "rulename": "生成-instanceDown（服务关闭）",
-    "time": "2025-09-19T17:45:22.279076Z"
-  },
-  {
-    "app": "auth-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.10",
-    "hostname": "M5-VM-172.16.21.101",
-    "ip": "172.16.21.101",
-    "network_partition": "生产区",
-    "rulename": "生成-serviceTimeout（服务超时）",
-    "time": "2025-09-19T17:42:22.279076Z"
-  },
-  {
-    "app": "report-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.30",
-    "hostname": "M5-VM-172.16.20.301",
-    "ip": "172.16.20.301",
-    "network_partition": "研发测试区",
-    "rulename": "生成-highCPU（CPU使用率过高）",
-    "time": "2025-09-19T17:04:22.279076Z"
-  },
-  {
-    "app": "alert-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.20",
-    "hostname": "M5-VM-172.16.21.202",
-    "ip": "172.16.21.202",
-    "network_partition": "生产区",
-    "rulename": "生成-instanceDown（服务关闭）",
-    "time": "2025-09-19T17:58:22.279076Z"
-  },
-  {
-    "app": "auth-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.10",
-    "hostname": "M5-VM-172.16.21.101",
-    "ip": "172.16.21.101",
-    "network_partition": "生产区",
-    "rulename": "生成-instanceDown（服务关闭）",
-    "time": "2025-09-19T17:45:22.279076Z"
-  },
-  {
-    "app": "monitor-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.11.20",
-    "hostname": "M5-VM-172.16.21.201",
-    "ip": "172.16.21.201",
-    "network_partition": "生产区",
-    "rulename": "生成-diskFull（磁盘已满）",
-    "time": "2025-09-19T17:34:22.279076Z"
-  },
-  {
-    "app": "inventory-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.20",
-    "hostname": "M5-VM-172.16.20.201",
-    "ip": "172.16.20.201",
-    "network_partition": "研发测试区",
-    "rulename": "生成-highCPU（CPU使用率过高）",
-    "time": "2025-09-19T16:17:22.279076Z"
-  },
-  {
-    "app": "log-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.30",
-    "hostname": "M5-VM-172.16.20.302",
-    "ip": "172.16.20.302",
-    "network_partition": "研发测试区",
-    "rulename": "生成-memoryLeak（内存泄漏）",
-    "time": "2025-09-19T16:37:22.279076Z"
-  },
-  {
-    "app": "user-service",
-    "datacenter": "M5",
-    "host_ip": "172.16.10.20",
-    "hostname": "M5-VM-172.16.20.202",
-    "ip": "172.16.20.202",
-    "network_partition": "研发测试区",
-    "rulename": "生成-serviceTimeout（服务超时）",
-    "time": "2025-09-19T16:23:22.279076Z"
+    "id": "evt-app-2",
+    "source": "monitor",
+    "priority": "P1",
+    "node_type": "App",
+    "ip": "172.16.20.102",
+    "host_ip": "172.16.10.10",
+    "service": "payment-service",
+    "occurred_at": "2024-03-01T10:00:30Z"
   }
 ]
