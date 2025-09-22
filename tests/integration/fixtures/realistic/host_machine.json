@@ -1,0 +1,26 @@
+[
+  {
+    "id": 4001,
+    "idc": "M5",
+    "network_partition": "Production Zone",
+    "server_type": 1,
+    "ip": "172.20.1.10",
+    "host_name": "m5-prod-host-01"
+  },
+  {
+    "id": 4002,
+    "idc": "M5",
+    "network_partition": "Production Zone",
+    "server_type": 1,
+    "ip": "172.20.1.20",
+    "host_name": "m5-prod-host-02"
+  },
+  {
+    "id": 4003,
+    "idc": "M5",
+    "network_partition": "DMZ Zone",
+    "server_type": 1,
+    "ip": "172.21.1.10",
+    "host_name": "m5-dmz-host-01"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "id": 6001,
+    "idc": "M5",
+    "network_partition": "Production Zone",
+    "server_type": 3,
+    "ip": "172.20.100.10",
+    "host_name": "m5-phy-blade-01"
+  },
+  {
+    "id": 6002,
+    "idc": "M5",
+    "network_partition": "Production Zone",
+    "server_type": 3,
+    "ip": "172.20.100.20",
+    "host_name": "m5-phy-blade-02"
+  },
+  {
+    "id": 6003,
+    "idc": "GZ",
+    "network_partition": "Backup Zone",
+    "server_type": 3,
+    "ip": "172.30.100.10",
+    "host_name": "gz-phy-blade-01"
+  }
+]

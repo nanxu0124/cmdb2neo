@@ -1,0 +1,56 @@
+[
+  {
+    "id": "evt-001",
+    "source": "Prometheus",
+    "priority": "P1",
+    "node_type": "App",
+    "ip": "172.20.2.21",
+    "host_ip": "172.20.1.20",
+    "service": "payment-gateway-api",
+    "occurred_at": "2024-03-12T02:30:05Z",
+    "attributes": {
+      "reason": "HTTP 5xx surge",
+      "cluster": "prod-m5"
+    }
+  },
+  {
+    "id": "evt-002",
+    "source": "Prometheus",
+    "priority": "P1",
+    "node_type": "App",
+    "ip": "172.20.2.22",
+    "host_ip": "172.20.1.20",
+    "service": "payment-async-worker",
+    "occurred_at": "2024-03-12T02:30:12Z",
+    "attributes": {
+      "reason": "Kafka consumer timeout",
+      "cluster": "prod-m5"
+    }
+  },
+  {
+    "id": "evt-003",
+    "source": "Prometheus",
+    "priority": "P1",
+    "node_type": "App",
+    "ip": "172.20.2.31",
+    "host_ip": "172.20.1.20",
+    "service": "inventory-service-api",
+    "occurred_at": "2024-03-12T02:30:28Z",
+    "attributes": {
+      "reason": "Instance unreachable",
+      "cluster": "prod-m5"
+    }
+  },
+  {
+    "id": "evt-004",
+    "source": "NodeExporter",
+    "priority": "P0",
+    "node_type": "HostMachine",
+    "ip": "172.20.1.20",
+    "occurred_at": "2024-03-12T02:29:40Z",
+    "attributes": {
+      "reason": "NIC down on rack TOR-23",
+      "cmdb_key": "HM_4002"
+    }
+  }
+]

@@ -252,7 +252,7 @@ func nodeFromRecord(record map[string]any, key string) (*Node, error) {
 	if !ok {
 		return nil, fmt.Errorf("字段 %s 不是 Neo4j 节点: %T", key, val)
 	}
-	labels := node.Labels()
+	labels := node.Labels
 	typ := inferNodeType(labels)
 
 	props := make(map[string]any, len(node.Props))

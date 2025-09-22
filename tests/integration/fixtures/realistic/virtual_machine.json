@@ -1,0 +1,56 @@
+[
+  {
+    "id": 5001,
+    "idc": "M5",
+    "network_partition": "Production Zone",
+    "server_type": 2,
+    "ip": "172.20.2.11",
+    "host_name": "vm-order-api",
+    "host_ip": "172.20.1.10"
+  },
+  {
+    "id": 5002,
+    "idc": "M5",
+    "network_partition": "Production Zone",
+    "server_type": 2,
+    "ip": "172.20.2.21",
+    "host_name": "vm-payment-api",
+    "host_ip": "172.20.1.20"
+  },
+  {
+    "id": 5003,
+    "idc": "M5",
+    "network_partition": "Production Zone",
+    "server_type": 2,
+    "ip": "172.20.2.22",
+    "host_name": "vm-payment-worker",
+    "host_ip": "172.20.1.20"
+  },
+  {
+    "id": 5004,
+    "idc": "M5",
+    "network_partition": "Production Zone",
+    "server_type": 2,
+    "ip": "172.20.2.31",
+    "host_name": "vm-inventory-api",
+    "host_ip": "172.20.1.20"
+  },
+  {
+    "id": 5005,
+    "idc": "M5",
+    "network_partition": "DMZ Zone",
+    "server_type": 2,
+    "ip": "172.21.2.11",
+    "host_name": "vm-edge-proxy",
+    "host_ip": "172.21.1.10"
+  },
+  {
+    "id": 5006,
+    "idc": "M5",
+    "network_partition": "Production Zone",
+    "server_type": 2,
+    "ip": "172.20.2.41",
+    "host_name": "vm-reporting",
+    "host_ip": "172.20.1.20"
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "id": 201,
+    "idc": "M5",
+    "Name": "Production Zone",
+    "CIDR": "172.20.0.0/20"
+  },
+  {
+    "id": 202,
+    "idc": "M5",
+    "Name": "DMZ Zone",
+    "CIDR": "172.21.0.0/22"
+  },
+  {
+    "id": 301,
+    "idc": "GZ",
+    "Name": "Backup Zone",
+    "CIDR": "172.30.0.0/21"
+  }
+]

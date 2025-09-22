@@ -1,0 +1,32 @@
+[
+  {
+    "id": 7001,
+    "ip": "172.20.2.11",
+    "name": "order-service-api"
+  },
+  {
+    "id": 7002,
+    "ip": "172.20.2.21",
+    "name": "payment-gateway-api"
+  },
+  {
+    "id": 7003,
+    "ip": "172.20.2.22",
+    "name": "payment-async-worker"
+  },
+  {
+    "id": 7004,
+    "ip": "172.20.2.31",
+    "name": "inventory-service-api"
+  },
+  {
+    "id": 7005,
+    "ip": "172.21.2.11",
+    "name": "edge-proxy"
+  },
+  {
+    "id": 7006,
+    "ip": "172.20.2.41",
+    "name": "reporting-service"
+  }
+]
