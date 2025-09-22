@@ -10,3 +10,15 @@ sync:
   retry:
     attempts: 3
     backoff_seconds: 2
+  initial_resync: false
+  interval_seconds: 300
+  source:
+    base_url: ""
+    snapshot_api: "/api/v1/snapshot"
+    auth_header: "Authorization"
+    static_token: ""
+    auth_endpoint: ""
+    username: ""
+    password: ""
+http:
+  listen: ":8080"
