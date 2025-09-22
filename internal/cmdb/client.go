@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -151,6 +154,35 @@ type HTTPClient struct {
 	authHeader  string
 }
 
+type AppObject struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type DataContent struct {
+	Id               int         `json:"id"`
+	Idc              string      `json:"idc"`
+	NetworkPartition string      `json:"network_partition"`
+	ServerType       int         `json:"server_type"`
+	Ip               string      `json:"ip"`
+	HostName         string      `json:"host_name"`
+	HostIp           string      `json:"host_ip"`
+	AppObj           []AppObject `json:"app_obj"`
+}
+
+type ResponseData struct {
+	Page  int           `json:"page"`
+	Limit int           `json:"limit"`
+	Total int           `json:"total"`
+	Data  []DataContent `json:"data"`
+}
+
+type Request struct {
+	Code int          `json:"code"`
+	Data ResponseData `json:"data"`
+	Msg  string       `json:"msg"`
+}
+
 // HTTPConfig 配置 HTTP 客户端。
 type HTTPConfig struct {
 	BaseURL        string
@@ -205,8 +237,16 @@ func (c *HTTPClient) FetchSnapshot(ctx context.Context) (Snapshot, error) {
 }
 
 func (c *HTTPClient) getJSON(ctx context.Context, path string, out any) error {
-	url := c.baseURL + path
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if snapshotPtr, ok := out.(*Snapshot); ok {
+		snap, err := c.fetchSnapshot(ctx, path)
+		if err != nil {
+			return err
+		}
+		*snapshotPtr = snap
+		return nil
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+path, nil)
 	if err != nil {
 		return fmt.Errorf("构建请求失败: %w", err)
 	}
@@ -235,4 +275,177 @@ func (c *HTTPClient) getJSON(ctx context.Context, path string, out any) error {
 		return fmt.Errorf("解析 CMDB 响应失败: %w", err)
 	}
 	return nil
+}
+
+func (c *HTTPClient) fetchSnapshot(ctx context.Context, path string) (Snapshot, error) {
+	idcs := []string{"M5", "IDC1", "IDC2"}
+	snapshot := Snapshot{RunID: time.Now().UTC().Format("20060102T150405Z")}
+
+	hostSeen := make(map[int]bool)
+	vmSeen := make(map[int]bool)
+	physicalSeen := make(map[int]bool)
+	appSeen := make(map[int]bool)
+	npIDs := make(map[string]int)
+	npCounter := 1
+
+	for idx, idcName := range idcs {
+		snapshot.IDCs = append(snapshot.IDCs, IDC{Id: idx + 1, Name: idcName, Location: idcName})
+
+		contents, err := c.fetchAllPagesForIDC(ctx, path, idcName)
+		if err != nil {
+			return Snapshot{}, err
+		}
+
+		for _, item := range contents {
+			npKey := idcName + ":" + item.NetworkPartition
+			if item.NetworkPartition != "" {
+				if _, exists := npIDs[npKey]; !exists {
+					snapshot.NetworkPartitions = append(snapshot.NetworkPartitions, NetworkPartition{
+						Id:   npCounter,
+						Idc:  idcName,
+						Name: item.NetworkPartition,
+						CIDR: "",
+					})
+					npIDs[npKey] = npCounter
+					npCounter++
+				}
+			}
+
+			switch item.ServerType {
+			case 1:
+				if !hostSeen[item.Id] {
+					snapshot.HostMachines = append(snapshot.HostMachines, HostMachine{
+						Id:             item.Id,
+						Idc:            idcName,
+						NetworkPartion: item.NetworkPartition,
+						ServerType:     strconv.Itoa(item.ServerType),
+						Ip:             item.Ip,
+						Hostname:       item.HostName,
+					})
+					hostSeen[item.Id] = true
+				}
+			case 2:
+				if !vmSeen[item.Id] {
+					snapshot.VirtualMachines = append(snapshot.VirtualMachines, VirtualMachine{
+						Id:             item.Id,
+						Idc:            idcName,
+						NetworkPartion: item.NetworkPartition,
+						ServerType:     strconv.Itoa(item.ServerType),
+						Ip:             item.Ip,
+						Hostname:       item.HostName,
+						HostIp:         item.HostIp,
+					})
+					vmSeen[item.Id] = true
+				}
+			case 3:
+				if !physicalSeen[item.Id] {
+					snapshot.PhysicalMachines = append(snapshot.PhysicalMachines, PhysicalMachine{
+						Id:             item.Id,
+						Idc:            idcName,
+						NetworkPartion: item.NetworkPartition,
+						ServerType:     strconv.Itoa(item.ServerType),
+						Ip:             item.Ip,
+						Hostname:       item.HostName,
+					})
+					physicalSeen[item.Id] = true
+				}
+			}
+
+			if len(item.AppObj) > 0 {
+				for idxApp, appInfo := range item.AppObj {
+					appID := appInfo.ID
+					if appID == 0 {
+						appID = item.Id*100 + idxApp + 1
+					}
+					if appSeen[appID] {
+						continue
+					}
+					name := appInfo.Name
+					if strings.TrimSpace(name) == "" {
+						name = fmt.Sprintf("app-%d", appID)
+					}
+					snapshot.Apps = append(snapshot.Apps, App{Id: appID, Ip: item.Ip, Name: name})
+					appSeen[appID] = true
+				}
+			}
+		}
+	}
+
+	return snapshot, nil
+}
+
+func (c *HTTPClient) fetchAllPagesForIDC(ctx context.Context, path, idc string) ([]DataContent, error) {
+	endpoint := c.baseURL + path
+	parsed, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("解析请求地址失败: %w", err)
+	}
+	query := parsed.Query()
+	if query.Get("limit") == "" {
+		query.Set("limit", "20")
+	}
+	if strings.TrimSpace(idc) != "" {
+		query.Set("idc", idc)
+	}
+
+	var (
+		allData    []DataContent
+		page       = 1
+		pageLimit  = 0
+		totalItems = 0
+	)
+
+	for {
+		query.Set("page", strconv.Itoa(page))
+		parsed.RawQuery = query.Encode()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, parsed.String(), nil)
+		if err != nil {
+			return nil, fmt.Errorf("构建请求失败: %w", err)
+		}
+		req.Header.Set("Accept", "application/json")
+		if c.tokenSource != nil {
+			token, err := c.tokenSource.Token(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("获取 token 失败: %w", err)
+			}
+			if token != "" {
+				req.Header.Set(c.authHeader, "Bearer "+token)
+			}
+		}
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("请求 CMDB 失败: %w", err)
+		}
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("读取 CMDB 响应失败: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("CMDB 返回状态码 %d", resp.StatusCode)
+		}
+
+		var payload Request
+		if err := json.Unmarshal(body, &payload); err != nil {
+			return nil, fmt.Errorf("解析 CMDB 响应失败: %w", err)
+		}
+
+		if len(payload.Data.Data) == 0 {
+			break
+		}
+		allData = append(allData, payload.Data.Data...)
+
+		pageLimit = payload.Data.Limit
+		totalItems = payload.Data.Total
+		if pageLimit > 0 && totalItems > 0 && page*pageLimit >= totalItems {
+			break
+		}
+
+		page++
+	}
+
+	return allData, nil
 }
