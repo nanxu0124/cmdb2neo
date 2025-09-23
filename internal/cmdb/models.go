@@ -51,6 +51,7 @@ type App struct {
 	Id   int    `json:"id"`
 	Ip   string `json:"ip"`
 	Name string `json:"name"`
+	ServerType string `json:"server_type"`
 }
 
 // Snapshot 汇总快照数据。

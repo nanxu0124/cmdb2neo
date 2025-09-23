@@ -24,8 +24,8 @@ func BuildInitRows(snapshot Snapshot) ([]domain.NodeRow, []domain.RelRow) {
 		key := domain.MakeKey(domain.PrefixIDC, idc.Id)
 		idcKeyMap[idStr] = key
 		nodes = append(nodes, domain.NodeRow{
-			CMDBKey:   key,
-			Labels:    []string{domain.LabelIDC},
+			CMDBKey: key,
+			Labels:  []string{domain.LabelIDC},
 			Properties: map[string]any{
 				"cmdb_id":  idc.Id,
 				"name":     idc.Name,
@@ -58,11 +58,11 @@ func BuildInitRows(snapshot Snapshot) ([]domain.NodeRow, []domain.RelRow) {
 			})
 		}
 		nodes = append(nodes, domain.NodeRow{
-			CMDBKey:   key,
-			Labels:    []string{domain.LabelNetPartition},
+			CMDBKey:    key,
+			Labels:     []string{domain.LabelNetPartition},
 			Properties: props,
-			RunID:     runID,
-			UpdatedAt: now,
+			RunID:      runID,
+			UpdatedAt:  now,
 		})
 	}
 
@@ -73,12 +73,12 @@ func BuildInitRows(snapshot Snapshot) ([]domain.NodeRow, []domain.RelRow) {
 			hostByIP[host.Ip] = key
 		}
 		props := map[string]any{
-			"cmdb_id":        host.Id,
-			"hostname":       host.Hostname,
-			"ip":             host.Ip,
-			"idc":            host.Idc,
+			"cmdb_id":         host.Id,
+			"hostname":        host.Hostname,
+			"ip":              host.Ip,
+			"idc":             host.Idc,
 			"network_partion": host.NetworkPartion,
-			"server_type":    host.ServerType,
+			"server_type":     host.ServerType,
 		}
 		if npKey, ok := npKeyMap[host.NetworkPartion]; ok {
 			props["network_partion_key"] = npKey
@@ -98,20 +98,24 @@ func BuildInitRows(snapshot Snapshot) ([]domain.NodeRow, []domain.RelRow) {
 				domain.LabelCompute,
 			},
 			Properties: props,
-			RunID:     runID,
-			UpdatedAt: now,
+			RunID:      runID,
+			UpdatedAt:  now,
 		})
 	}
 
+	physicalByIP := make(map[string]string, len(snapshot.PhysicalMachines))
 	for _, pm := range snapshot.PhysicalMachines {
 		key := domain.MakeKey(domain.PrefixPhysical, pm.Id)
+		if pm.Ip != "" {
+			physicalByIP[pm.Ip] = key
+		}
 		props := map[string]any{
-			"cmdb_id":        pm.Id,
-			"hostname":       pm.Hostname,
-			"ip":             pm.Ip,
-			"idc":            pm.Idc,
+			"cmdb_id":         pm.Id,
+			"hostname":        pm.Hostname,
+			"ip":              pm.Ip,
+			"idc":             pm.Idc,
 			"network_partion": pm.NetworkPartion,
-			"server_type":    pm.ServerType,
+			"server_type":     pm.ServerType,
 		}
 		if npKey, ok := npKeyMap[pm.NetworkPartion]; ok {
 			props["network_partion_key"] = npKey
@@ -131,8 +135,8 @@ func BuildInitRows(snapshot Snapshot) ([]domain.NodeRow, []domain.RelRow) {
 				domain.LabelCompute,
 			},
 			Properties: props,
-			RunID:     runID,
-			UpdatedAt: now,
+			RunID:      runID,
+			UpdatedAt:  now,
 		})
 	}
 
@@ -143,13 +147,13 @@ func BuildInitRows(snapshot Snapshot) ([]domain.NodeRow, []domain.RelRow) {
 			vmKeyByIP[vm.Ip] = key
 		}
 		props := map[string]any{
-			"cmdb_id":        vm.Id,
-			"hostname":       vm.Hostname,
-			"ip":             vm.Ip,
-			"host_ip":        vm.HostIp,
-			"idc":            vm.Idc,
+			"cmdb_id":         vm.Id,
+			"hostname":        vm.Hostname,
+			"ip":              vm.Ip,
+			"host_ip":         vm.HostIp,
+			"idc":             vm.Idc,
 			"network_partion": vm.NetworkPartion,
-			"server_type":    vm.ServerType,
+			"server_type":     vm.ServerType,
 		}
 		if hostKey, ok := hostByIP[vm.HostIp]; ok && vm.HostIp != "" {
 			rels = append(rels, domain.RelRow{
@@ -167,8 +171,8 @@ func BuildInitRows(snapshot Snapshot) ([]domain.NodeRow, []domain.RelRow) {
 				domain.LabelCompute,
 			},
 			Properties: props,
-			RunID:     runID,
-			UpdatedAt: now,
+			RunID:      runID,
+			UpdatedAt:  now,
 		})
 	}
 
@@ -179,21 +183,51 @@ func BuildInitRows(snapshot Snapshot) ([]domain.NodeRow, []domain.RelRow) {
 			"name":    app.Name,
 			"ip":      app.Ip,
 		}
-		if vmKey, ok := vmKeyByIP[app.Ip]; ok && app.Ip != "" {
-			rels = append(rels, domain.RelRow{
-				StartKey:   key,
-				EndKey:     vmKey,
-				Type:       domain.RelAppDeploy,
-				Properties: map[string]any{"via": "vm_ip"},
-				RunID:      runID,
-			})
+		if app.ServerType != "" {
+			props["server_type"] = app.ServerType
 		}
+
+		if app.Ip != "" {
+			addRelation := func(targetKey, via string) {
+				rels = append(rels, domain.RelRow{
+					StartKey:   key,
+					EndKey:     targetKey,
+					Type:       domain.RelAppDeploy,
+					Properties: map[string]any{"via": via},
+					RunID:      runID,
+				})
+			}
+
+			switch app.ServerType {
+			case "1":
+				if hostKey, ok := hostByIP[app.Ip]; ok {
+					addRelation(hostKey, "host_ip")
+				}
+			case "3":
+				if physicalKey, ok := physicalByIP[app.Ip]; ok {
+					addRelation(physicalKey, "physical_ip")
+				}
+			case "2":
+				if vmKey, ok := vmKeyByIP[app.Ip]; ok {
+					addRelation(vmKey, "vm_ip")
+				}
+			default:
+				if vmKey, ok := vmKeyByIP[app.Ip]; ok {
+					addRelation(vmKey, "vm_ip")
+				} else if hostKey, ok := hostByIP[app.Ip]; ok {
+					addRelation(hostKey, "host_ip")
+				} else if physicalKey, ok := physicalByIP[app.Ip]; ok {
+					addRelation(physicalKey, "physical_ip")
+				}
+			}
+		}
+
 		nodes = append(nodes, domain.NodeRow{
-			CMDBKey:   key,
-			Labels:    []string{domain.LabelApp},
+			CMDBKey:    key,
+			Labels:     []string{domain.LabelApp},
 			Properties: props,
-			RunID:     runID,
-			UpdatedAt: now,
+			RunID:      runID,
+			UpdatedAt:  now,
 		})
 	}
 

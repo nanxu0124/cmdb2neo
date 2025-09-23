@@ -364,7 +364,12 @@ func (c *HTTPClient) fetchSnapshot(ctx context.Context, path string) (Snapshot, 
 					if strings.TrimSpace(name) == "" {
 						name = fmt.Sprintf("app-%d", appID)
 					}
-					snapshot.Apps = append(snapshot.Apps, App{Id: appID, Ip: item.Ip, Name: name})
+					snapshot.Apps = append(snapshot.Apps, App{
+						Id:         appID,
+						Ip:         item.Ip,
+						Name:       name,
+						ServerType: strconv.Itoa(item.ServerType),
+					})
 					appSeen[appID] = true
 				}
 			}
