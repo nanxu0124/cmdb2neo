@@ -62,6 +62,156 @@ type Chain struct {
 	IDC             *Node
 }
 
+// TopoNode 表示在 StageB 中构建的拓扑树节点。
+type TopoNode struct {
+	Node
+	Parent   *TopoNode
+	Children map[string]*TopoNode
+	Impacts  map[string]*TopoImpact
+	Events   map[string]AlarmEventRef
+}
+
+// TopoImpact 描述父节点下的某个子节点对告警的影响。
+type TopoImpact struct {
+	Node   NodeRef
+	Events map[string]AlarmEventRef
+}
+
+// NewTopoNode 基于 Node 信息创建拓扑节点。
+func NewTopoNode(node Node) *TopoNode {
+	return &TopoNode{
+		Node:     node,
+		Children: make(map[string]*TopoNode),
+		Impacts:  make(map[string]*TopoImpact),
+		Events:   make(map[string]AlarmEventRef),
+	}
+}
+
+// AddEvent 将事件记录到当前节点。
+func (n *TopoNode) AddEvent(id string, ref AlarmEventRef) {
+	if n.Events == nil {
+		n.Events = make(map[string]AlarmEventRef)
+	}
+	n.Events[id] = ref
+}
+
+// AttachChild 维护父子关系。
+func (n *TopoNode) AttachChild(child *TopoNode) {
+	if child == nil {
+		return
+	}
+	if n.Children == nil {
+		n.Children = make(map[string]*TopoNode)
+	}
+	n.Children[child.NodeRef.Key] = child
+	child.Parent = n
+}
+
+// AddImpact 在父节点上记录来自子节点的告警。
+func (n *TopoNode) AddImpact(child *TopoNode, ref AlarmEventRef) {
+	if child == nil {
+		return
+	}
+	if n.Impacts == nil {
+		n.Impacts = make(map[string]*TopoImpact)
+	}
+	impact, ok := n.Impacts[child.NodeRef.Key]
+	if !ok {
+		impact = &TopoImpact{Node: child.NodeRef, Events: make(map[string]AlarmEventRef)}
+		n.Impacts[child.NodeRef.Key] = impact
+	}
+	impact.Events[ref.ID] = ref
+}
+
+// Coverage 计算节点的告警覆盖率以及被影响的子节点集合。
+func (n *TopoNode) Coverage() (float64, map[string]struct{}) {
+	active := make(map[string]struct{})
+	for key, impact := range n.Impacts {
+		if impact == nil || len(impact.Events) == 0 {
+			continue
+		}
+		active[key] = struct{}{}
+	}
+	if len(active) == 0 {
+		return 0, nil
+	}
+	childType := n.ChildType()
+	total := n.ChildCounts[childType]
+	if total <= 0 {
+		total = len(active)
+	}
+	coverage := float64(len(active)) / float64(total)
+	if coverage > 1 {
+		coverage = 1
+	}
+	return coverage, active
+}
+
+// ChildType 返回当前节点活跃子节点的类型。
+func (n *TopoNode) ChildType() NodeType {
+	for _, impact := range n.Impacts {
+		if impact == nil || len(impact.Events) == 0 {
+			continue
+		}
+		return impact.Node.Type
+	}
+	return NodeType("")
+}
+
+// ComputeScore 根据权重计算节点得分。
+func (n *TopoNode) ComputeScore(weights ScoreWeights, totalEvents int) ScoreDetail {
+	coverage, _ := n.Coverage()
+	impact := 0.0
+	if totalEvents > 0 {
+		impact = float64(len(n.Events)) / float64(totalEvents)
+	}
+	raw := weights.Base + weights.Coverage*coverage + weights.Impact*impact
+	if raw < 0 {
+		raw = 0
+	}
+	if raw > 1 {
+		raw = 1
+	}
+	return ScoreDetail{
+		Coverage:   coverage,
+		Impact:     impact,
+		Base:       weights.Base,
+		RawScore:   raw,
+		Normalized: raw,
+	}
+}
+
+// ReduceImpact 从父节点中移除指定子节点带来的告警。
+func (n *TopoNode) ReduceImpact(childKey string, events map[string]AlarmEventRef) {
+	if n == nil || events == nil {
+		return
+	}
+	impact, ok := n.Impacts[childKey]
+	if !ok || impact == nil {
+		return
+	}
+	for id := range events {
+		delete(impact.Events, id)
+		delete(n.Events, id)
+	}
+	if len(impact.Events) == 0 {
+		delete(n.Impacts, childKey)
+	}
+}
+
+// SuppressUpwards 将事件从当前节点向父节点逐层移除。
+func (n *TopoNode) SuppressUpwards(events map[string]AlarmEventRef) {
+	if n == nil || events == nil {
+		return
+	}
+	parent := n.Parent
+	if parent == nil {
+		return
+	}
+	parent.ReduceImpact(n.NodeRef.Key, events)
+	parent.SuppressUpwards(events)
+}
+
 type AppOutage struct {
 	AppName       string          `json:"app_name"`
 	Datacenter    string          `json:"datacenter"`

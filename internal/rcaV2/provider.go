@@ -11,8 +11,8 @@ import (
 
 // TopologyProvider 提供拓扑链路和部署信息。
 type TopologyProvider interface {
-	ResolveChain(ctx context.Context, event AlarmEvent) (Chain, error)
 	ListAppInstances(ctx context.Context, appName string, datacenter string) (int, error)
+	ResolveEvent(ctx context.Context, event AlarmEvent) ([]Node, error)
 }
 
 // GraphProvider 基于 Neo4j 的实现。
@@ -24,15 +24,21 @@ func NewGraphProvider(client graph.Reader) *GraphProvider {
 	return &GraphProvider{client: client}
 }
 
-func (p *GraphProvider) ResolveChain(ctx context.Context, event AlarmEvent) (Chain, error) {
+func (p *GraphProvider) ResolveEvent(ctx context.Context, event AlarmEvent) ([]Node, error) {
+	var chain Chain
+	var err error
 	switch event.ServerType {
 	case ServerTypeHost:
-		return p.resolveFromHost(ctx, event)
+		chain, err = p.resolveFromHost(ctx, event)
 	case ServerTypePhysical:
-		return p.resolveFromPhysical(ctx, event)
+		chain, err = p.resolveFromPhysical(ctx, event)
 	default:
-		return p.resolveFromAppOrVM(ctx, event)
+		chain, err = p.resolveFromAppOrVM(ctx, event)
 	}
+	if err != nil {
+		return nil, err
+	}
+	return chainToNodes(chain), nil
 }
 
 func (p *GraphProvider) ListAppInstances(ctx context.Context, appName string, datacenter string) (int, error) {
@@ -226,6 +232,18 @@ func intValue(raw any) int {
 	default:
 		return 0
 	}
+}
+
+func chainToNodes(chain Chain) []Node {
+	ordered := []*Node{chain.App, chain.VirtualMachine, chain.HostMachine, chain.PhysicalMachine, chain.NetPartition, chain.IDC}
+	nodes := make([]Node, 0, len(ordered))
+	for _, ptr := range ordered {
+		if ptr == nil {
+			continue
+		}
+		nodes = append(nodes, *ptr)
+	}
+	return nodes
 }
 
 func nodeFromRecord(record map[string]any, key string) (*Node, error) {
