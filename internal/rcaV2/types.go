@@ -124,27 +124,19 @@ func (n *TopoNode) AddImpact(child *TopoNode, ref AlarmEventRef) {
 }
 
 // Coverage 计算节点的告警覆盖率以及被影响的子节点集合。
-func (n *TopoNode) Coverage() (float64, map[string]struct{}) {
-	active := make(map[string]struct{})
-	for key, impact := range n.Impacts {
-		if impact == nil || len(impact.Events) == 0 {
-			continue
-		}
-		active[key] = struct{}{}
+func (n *TopoNode) Coverage() float64 {
+	if len(n.Children) == 0 && len(n.Impacts) == 0 {
+		return 1.0
 	}
-	if len(active) == 0 {
-		return 0, nil
-	}
+
 	childType := n.ChildType()
 	total := n.ChildCounts[childType]
-	if total <= 0 {
-		total = len(active)
-	}
-	coverage := float64(len(active)) / float64(total)
+
+	coverage := float64(len(n.Impacts)) / float64(total)
 	if coverage > 1 {
 		coverage = 1
 	}
-	return coverage, active
+	return coverage
 }
 
 // ChildType 返回当前节点活跃子节点的类型。
@@ -159,13 +151,10 @@ func (n *TopoNode) ChildType() NodeType {
 }
 
 // ComputeScore 根据权重计算节点得分。
-func (n *TopoNode) ComputeScore(weights ScoreWeights, totalEvents int) ScoreDetail {
-	coverage, _ := n.Coverage()
-	impact := 0.0
-	if totalEvents > 0 {
-		impact = float64(len(n.Events)) / float64(totalEvents)
-	}
-	raw := weights.Base + weights.Coverage*coverage + weights.Impact*impact
+func (n *TopoNode) ComputeScore(weights ScoreWeights) ScoreDetail {
+	coverage := n.Coverage()
+
+	raw := weights.Base + weights.Coverage*coverage
 	if raw < 0 {
 		raw = 0
 	}
@@ -174,42 +163,10 @@ func (n *TopoNode) ComputeScore(weights ScoreWeights, totalEvents int) ScoreDeta
 	}
 	return ScoreDetail{
 		Coverage:   coverage,
-		Impact:     impact,
 		Base:       weights.Base,
 		RawScore:   raw,
 		Normalized: raw,
 	}
-}
-
-// ReduceImpact 从父节点中移除指定子节点带来的告警。
-func (n *TopoNode) ReduceImpact(childKey string, events map[string]AlarmEventRef) {
-	if n == nil || events == nil {
-		return
-	}
-	impact, ok := n.Impacts[childKey]
-	if !ok || impact == nil {
-		return
-	}
-	for id := range events {
-		delete(impact.Events, id)
-		delete(n.Events, id)
-	}
-	if len(impact.Events) == 0 {
-		delete(n.Impacts, childKey)
-	}
-}
-
-// SuppressUpwards 将事件从当前节点向父节点逐层移除。
-func (n *TopoNode) SuppressUpwards(events map[string]AlarmEventRef) {
-	if n == nil || events == nil {
-		return
-	}
-	parent := n.Parent
-	if parent == nil {
-		return
-	}
-	parent.ReduceImpact(n.NodeRef.Key, events)
-	parent.SuppressUpwards(events)
 }
 
 type AppOutage struct {
@@ -249,16 +206,17 @@ type ScoreDetail struct {
 	Normalized float64 `json:"normalized"`
 }
 
-// AlarmPath 记录候选节点下的告警链路。
+// AlarmPath 记录某个候选节点下的触发链路。
 type AlarmPath struct {
 	Candidate NodeRef      `json:"candidate"`
 	Impacts   []PathImpact `json:"impacts"`
 }
 
-// PathImpact 描述候选子节点和关联告警。
+// PathImpact 描述一个子节点及由它继续扩散的告警。
 type PathImpact struct {
-	Node   NodeRef         `json:"node"`
-	Events []AlarmEventRef `json:"events"`
+	Node    NodeRef         `json:"node"`
+	Events  []AlarmEventRef `json:"events"`
+	Impacts []PathImpact    `json:"impacts,omitempty"`
 }
 
 // AlarmEventRef 是压缩后的事件引用。
@@ -271,8 +229,8 @@ type AlarmEventRef struct {
 
 // Result 为一次 RCA 分析输出。
 type Result struct {
-	AppOutages        []AppOutage  `json:"app_outages"`
-	Candidates        []Candidate  `json:"candidates"`
-	Paths             []AlarmPath  `json:"paths"`
-	UnexplainedEvents []AlarmEvent `json:"unexplained_events"`
+	AppOutages []AppOutage `json:"app_outages"`
+	Candidates []Candidate `json:"candidates"`
+	Paths      []AlarmPath `json:"paths,omitempty"`
+	Prompt     string      `json:"prompt,omitempty"`
 }

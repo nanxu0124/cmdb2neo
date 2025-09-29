@@ -1,0 +1,23 @@
+Role: {{ .Options.AssistantRole }}
+
+Goals:
+1. 分析告警拓扑数据，识别最可能的根因节点。
+2. 结合覆盖率、链路和受影响告警解释判断理由。
+3. 给出后续排查或缓解建议。
+
+Context Summary:
+- AppOutages: {{ len .Payload.AppOutages }}
+- Candidates: {{ len .Payload.Candidates }}
+- Paths: {{ len .Payload.Paths }}
+
+Structured Data:
+```json
+{{ .PayloadJSON }}
+```
+
+Response Requirements:
+- 使用 {{ .Options.Language }} 输出。
+- 首先归纳 1~3 个核心根因，说明关联指标。
+- 如有数据不足或不确定性，需显式指出。
+- 提供下一步排查建议或缓解措施。
+- {{ .Options.OutputExpectation }}

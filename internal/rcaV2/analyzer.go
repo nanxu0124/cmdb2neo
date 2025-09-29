@@ -53,15 +53,18 @@ func (a *Analyzer) Analyze(ctx context.Context, events []AlarmEvent) (Result, er
 		}
 	}
 
-	candidates, paths, explained := a.evaluate(topoIndex)
-	unexplained := collectUnexplained(records, explained)
+	candidates, paths, err := a.evaluate(topoIndex)
+	if err != nil {
+		return Result{}, err
+	}
 
-	return Result{
-		AppOutages:        appOutages,
-		Candidates:        candidates,
-		Paths:             paths,
-		UnexplainedEvents: unexplained,
-	}, nil
+	res := Result{
+		AppOutages: appOutages,
+		Candidates: candidates,
+		Paths:      paths,
+	}
+	res.Prompt = RenderPrompt(res, DefaultPromptOptions())
+	return res, nil
 }
 
 // Stage A -------------------------------------------------
@@ -244,143 +247,117 @@ func ensureTopoNode(index map[string]*TopoNode, node Node) *TopoNode {
 	return topo
 }
 
-func (a *Analyzer) evaluate(nodes map[string]*TopoNode) ([]Candidate, []AlarmPath, map[string]struct{}) {
-	totalEvents := countEvents(nodes)
-	nodesByType := make(map[NodeType][]*TopoNode)
-	for _, n := range nodes {
-		nodesByType[n.NodeRef.Type] = append(nodesByType[n.NodeRef.Type], n)
+func (a *Analyzer) evaluate(nodes map[string]*TopoNode) ([]Candidate, []AlarmPath, error) {
+
+	// 只保留最上层的节点
+	for _, v := range nodes {
+		if v.Parent != nil {
+			delete(nodes, v.NodeRef.Key)
+		}
 	}
 
 	candidates := make([]Candidate, 0)
 	paths := make([]AlarmPath, 0)
-	explained := make(map[string]struct{})
-
-	for _, level := range a.config.Hierarchy {
-		sameType := nodesByType[level]
-		if len(sameType) == 0 {
-			continue
-		}
-		layerCfg, ok := a.config.Layers[level]
-		if !ok {
-			layerCfg = LayerConfig{CoverageThreshold: 0.6, MinChildren: 1, Weights: ScoreWeights{Coverage: 0.7, Impact: 0.3}}
-		}
-		sort.Slice(sameType, func(i, j int) bool { return sameType[i].NodeRef.Key < sameType[j].NodeRef.Key })
-
-		for _, node := range sameType {
-			if len(node.Events) == 0 {
-				continue
-			}
-			coverage, activeChildren := node.Coverage()
-			childCount := len(activeChildren)
-			if childCount >= layerCfg.MinChildren && coverage >= layerCfg.CoverageThreshold {
-				// 达标，允许继续向上扩散
-				continue
-			}
-
-			score := node.ComputeScore(layerCfg.Weights, totalEvents)
-			eventIDs := collectEventIDs(node.Events)
-			candidate := Candidate{
-				Node:       node.NodeRef,
-				Confidence: score.Normalized,
-				Coverage:   coverage,
-				Reason:     "TOPOLOGY",
-				Metrics:    score,
-				Explained:  eventIDs,
-			}
-			candidates = append(candidates, candidate)
-			paths = append(paths, buildPath(node))
-			for _, id := range eventIDs {
-				explained[id] = struct{}{}
-			}
-			node.SuppressUpwards(node.Events)
-			for id := range node.Events {
-				delete(node.Events, id)
-			}
-		}
+	for _, root := range nodes {
+		a.postOrderEvaluate(root, &candidates, &paths)
 	}
 
 	sort.Slice(candidates, func(i, j int) bool { return candidates[i].Confidence > candidates[j].Confidence })
-	return candidates, mergePaths(paths), explained
+	sort.Slice(paths, func(i, j int) bool { return paths[i].Candidate.Key < paths[j].Candidate.Key })
+	return candidates, paths, nil
+}
+
+// postOrderEvaluate 后序遍历，从叶子节点开始处理
+func (a *Analyzer) postOrderEvaluate(node *TopoNode, candidates *[]Candidate, paths *[]AlarmPath) {
+	if node == nil {
+		return
+	}
+
+	for _, child := range node.Children {
+		a.postOrderEvaluate(child, candidates, paths)
+	}
+
+	layerCfg, ok := a.config.Layers[node.NodeRef.Type]
+	if !ok {
+		layerCfg = LayerConfig{CoverageThreshold: 0.6, MinChildren: 1, Weights: ScoreWeights{Coverage: 0.7}}
+	}
+
+	coverage := node.Coverage()
+
+	if coverage > layerCfg.CoverageThreshold {
+		// 满足条件，标记为候选根因
+		score := node.ComputeScore(layerCfg.Weights)
+		eventIds := collectEventIDs(node.Events)
+
+		candidate := Candidate{
+			Node:       node.NodeRef,
+			Confidence: score.Normalized,
+			Coverage:   coverage,
+			Reason:     "TREE_POSTORDER",
+			Metrics:    score,
+			Explained:  eventIds,
+		}
+
+		*candidates = append(*candidates, candidate)
+		*paths = append(*paths, buildPath(node))
+		return
+	} else {
+		return
+	}
+
 }
 
 func buildPath(node *TopoNode) AlarmPath {
-	impacts := make([]PathImpact, 0, len(node.Impacts))
-	for _, impact := range node.Impacts {
-		if impact == nil || len(impact.Events) == 0 {
-			continue
-		}
-		refs := collectEventMap(impact.Events)
-		impacts = append(impacts, PathImpact{Node: impact.Node, Events: refs})
+	if node == nil {
+		return AlarmPath{}
 	}
-	sort.Slice(impacts, func(i, j int) bool { return impacts[i].Node.Key < impacts[j].Node.Key })
-	return AlarmPath{Candidate: node.NodeRef, Impacts: impacts}
+	return AlarmPath{
+		Candidate: node.NodeRef,
+		Impacts:   collectImpacts(node),
+	}
 }
 
-func mergePaths(paths []AlarmPath) []AlarmPath {
-	if len(paths) == 0 {
+func collectImpacts(node *TopoNode) []PathImpact {
+	if node == nil || len(node.Impacts) == 0 {
 		return nil
 	}
-	merged := make(map[string]*AlarmPath)
-	for _, path := range paths {
-		key := path.Candidate.Key
-		existing, ok := merged[key]
-		if !ok {
-			copy := path
-			merged[key] = &copy
+
+	keys := make([]string, 0, len(node.Impacts))
+	for key := range node.Impacts {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	impacts := make([]PathImpact, 0, len(keys))
+	for _, key := range keys {
+		impact := node.Impacts[key]
+		if impact == nil {
 			continue
 		}
-		existing.Impacts = mergeImpacts(existing.Impacts, path.Impacts)
-	}
-	result := make([]AlarmPath, 0, len(merged))
-	for _, path := range merged {
-		sort.Slice(path.Impacts, func(i, j int) bool { return path.Impacts[i].Node.Key < path.Impacts[j].Node.Key })
-		result = append(result, *path)
-	}
-	sort.Slice(result, func(i, j int) bool { return result[i].Candidate.Key < result[j].Candidate.Key })
-	return result
-}
 
-func mergeImpacts(dst, src []PathImpact) []PathImpact {
-	index := make(map[string]*PathImpact, len(dst))
-	for i := range dst {
-		index[dst[i].Node.Key] = &dst[i]
-	}
-	for _, imp := range src {
-		if existing, ok := index[imp.Node.Key]; ok {
-			existing.Events = mergeEventLists(existing.Events, imp.Events)
-			continue
+		events := make([]AlarmEventRef, 0, len(impact.Events))
+		for _, evt := range impact.Events {
+			events = append(events, evt)
 		}
-		dst = append(dst, imp)
-		index[imp.Node.Key] = &dst[len(dst)-1]
-	}
-	return dst
-}
+		sort.Slice(events, func(i, j int) bool {
+			if events[i].Occurred.Equal(events[j].Occurred) {
+				return events[i].ID < events[j].ID
+			}
+			return events[i].Occurred.Before(events[j].Occurred)
+		})
 
-func mergeEventLists(a, b []AlarmEventRef) []AlarmEventRef {
-	seen := make(map[string]AlarmEventRef, len(a)+len(b))
-	for _, evt := range a {
-		seen[evt.ID] = evt
-	}
-	for _, evt := range b {
-		if _, ok := seen[evt.ID]; !ok {
-			seen[evt.ID] = evt
+		var childImpacts []PathImpact
+		if child, ok := node.Children[key]; ok && child != nil {
+			childImpacts = collectImpacts(child)
 		}
-	}
-	result := make([]AlarmEventRef, 0, len(seen))
-	for _, evt := range seen {
-		result = append(result, evt)
-	}
-	sort.Slice(result, func(i, j int) bool { return result[i].ID < result[j].ID })
-	return result
-}
 
-func collectEventMap(events map[string]AlarmEventRef) []AlarmEventRef {
-	refs := make([]AlarmEventRef, 0, len(events))
-	for _, evt := range events {
-		refs = append(refs, evt)
+		impacts = append(impacts, PathImpact{
+			Node:    impact.Node,
+			Events:  events,
+			Impacts: childImpacts,
+		})
 	}
-	sort.Slice(refs, func(i, j int) bool { return refs[i].ID < refs[j].ID })
-	return refs
+	return impacts
 }
 
 func collectEventIDs(events map[string]AlarmEventRef) []string {
@@ -390,30 +367,4 @@ func collectEventIDs(events map[string]AlarmEventRef) []string {
 	}
 	sort.Strings(ids)
 	return ids
-}
-
-func countEvents(nodes map[string]*TopoNode) int {
-	seen := make(map[string]struct{})
-	for _, n := range nodes {
-		for id := range n.Events {
-			seen[id] = struct{}{}
-		}
-	}
-	return len(seen)
-}
-
-func collectUnexplained(records []*eventRecord, explained map[string]struct{}) []AlarmEvent {
-	result := make([]AlarmEvent, 0)
-	seen := make(map[string]struct{})
-	for _, rec := range records {
-		if _, ok := explained[rec.eventID]; ok {
-			continue
-		}
-		if _, ok := seen[rec.eventID]; ok {
-			continue
-		}
-		seen[rec.eventID] = struct{}{}
-		result = append(result, rec.event)
-	}
-	return result
 }
