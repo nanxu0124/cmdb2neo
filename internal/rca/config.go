@@ -1,33 +1,33 @@
-package rca
+package rcav2
 
-import "time"
-
-// ScoreWeights 控制各维度分数权重。
+// ScoreWeights 控制各指标权重。
 type ScoreWeights struct {
 	Coverage float64 `json:"coverage"`
-	TimeLead float64 `json:"time_lead"`
 	Impact   float64 `json:"impact"`
 	Base     float64 `json:"base"`
 }
 
-// LayerConfig 针对不同层的阈值与评分配置。
+// LayerConfig 每层的阈值配置。
 type LayerConfig struct {
 	CoverageThreshold float64      `json:"coverage_threshold"`
 	MinChildren       int          `json:"min_children"`
 	Weights           ScoreWeights `json:"weights"`
 }
 
-// Config 根因分析总配置。
+// Config 根因分析配置。
 type Config struct {
-	Hierarchy []NodeType               `json:"hierarchy"`
-	Layers    map[NodeType]LayerConfig `json:"layers"`
-	Window    time.Duration            `json:"window"`
+	Hierarchy          []NodeType               `json:"hierarchy"`
+	Layers             map[NodeType]LayerConfig `json:"layers"`
+	Datacenters        []string                 `json:"datacenters"`
+	AppOutageThreshold float64                  `json:"app_outage_threshold"`
+	RequireFullMatch   bool                     `json:"require_full_match"`
 }
 
-// DefaultConfig 返回一份默认的阈值配置。
+// DefaultConfig 提供默认配置。
 func DefaultConfig() Config {
 	return Config{
 		Hierarchy: []NodeType{
+			NodeTypeApp,
 			NodeTypeVirtualMachine,
 			NodeTypeHostMachine,
 			NodeTypePhysicalMachine,
@@ -35,32 +35,39 @@ func DefaultConfig() Config {
 			NodeTypeIDC,
 		},
 		Layers: map[NodeType]LayerConfig{
-			NodeTypeVirtualMachine: {
-				CoverageThreshold: 0.5,
+			NodeTypeApp: {
+				CoverageThreshold: 0.6,
 				MinChildren:       1,
-				Weights:           ScoreWeights{Coverage: 0.6, TimeLead: 0.2, Impact: 0.15, Base: 0.05},
+				Weights:           ScoreWeights{Coverage: 0.7, Impact: 0.3, Base: 0},
+			},
+			NodeTypeVirtualMachine: {
+				CoverageThreshold: 0.6,
+				MinChildren:       1,
+				Weights:           ScoreWeights{Coverage: 0.7, Impact: 0.3, Base: 0},
 			},
 			NodeTypeHostMachine: {
 				CoverageThreshold: 0.6,
-				MinChildren:       2,
-				Weights:           ScoreWeights{Coverage: 0.55, TimeLead: 0.2, Impact: 0.2, Base: 0.05},
+				MinChildren:       1,
+				Weights:           ScoreWeights{Coverage: 0.7, Impact: 0.3, Base: 0},
 			},
 			NodeTypePhysicalMachine: {
 				CoverageThreshold: 0.6,
 				MinChildren:       1,
-				Weights:           ScoreWeights{Coverage: 0.55, TimeLead: 0.15, Impact: 0.25, Base: 0.05},
+				Weights:           ScoreWeights{Coverage: 0.7, Impact: 0.3, Base: 0},
 			},
 			NodeTypeNetPartition: {
 				CoverageThreshold: 0.7,
 				MinChildren:       1,
-				Weights:           ScoreWeights{Coverage: 0.5, TimeLead: 0.2, Impact: 0.25, Base: 0.05},
+				Weights:           ScoreWeights{Coverage: 0.7, Impact: 0.3, Base: 0},
 			},
 			NodeTypeIDC: {
-				CoverageThreshold: 0.75,
+				CoverageThreshold: 0.8,
 				MinChildren:       1,
-				Weights:           ScoreWeights{Coverage: 0.5, TimeLead: 0.25, Impact: 0.2, Base: 0.05},
+				Weights:           ScoreWeights{Coverage: 0.7, Impact: 0.3, Base: 0},
 			},
 		},
-		Window: 5 * time.Minute,
+		Datacenters:        []string{"M5", "星光", "三星大厦"},
+		AppOutageThreshold: 0.6,
+		RequireFullMatch:   true,
 	}
 }
