@@ -6,7 +6,7 @@ import (
 
 	"cmdb2neo/internal/cypher"
 	"cmdb2neo/internal/domain"
-	"cmdb2neo/internal/util"
+	"cmdb2neo/pkg/util"
 )
 
 // RelUpserter 负责关系批量写入。

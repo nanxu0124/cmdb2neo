@@ -6,7 +6,7 @@ import (
 
 	"cmdb2neo/internal/cmdb"
 	"cmdb2neo/internal/loader"
-	"cmdb2neo/internal/logging"
+	"cmdb2neo/pkg/logging"
 	"go.uber.org/zap"
 )
 
@@ -26,7 +26,7 @@ func NewService(ctx context.Context, cfg Config, cmdbClient cmdb.Client) (*Servi
 	if cmdbClient == nil {
 		return nil, fmt.Errorf("必须提供 cmdb client")
 	}
-	logger, err := logging.New()
+	logger, err := logging.NewZpaLogger()
 	if err != nil {
 		return nil, err
 	}

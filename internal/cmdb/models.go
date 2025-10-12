@@ -37,20 +37,20 @@ type HostMachine struct {
 
 // VirtualMachine 表示虚拟机。
 type VirtualMachine struct {
-	Id             int      `json:"id"`
-	Idc            string   `json:"idc"`
-	NetworkPartion string   `json:"network_partion"`
-	ServerType     string   `json:"server_type"`
-	Ip             string   `json:"ip"`
-	Hostname       string   `json:"hostname"`
-	HostIp         string   `json:"host_ip"`
+	Id             int    `json:"id"`
+	Idc            string `json:"idc"`
+	NetworkPartion string `json:"network_partion"`
+	ServerType     string `json:"server_type"`
+	Ip             string `json:"ip"`
+	Hostname       string `json:"hostname"`
+	HostIp         string `json:"host_ip"`
 }
 
 // App 表示应用。
 type App struct {
-	Id   int    `json:"id"`
-	Ip   string `json:"ip"`
-	Name string `json:"name"`
+	Id         int    `json:"id"`
+	Ip         string `json:"ip"`
+	Name       string `json:"name"`
 	ServerType string `json:"server_type"`
 }
 

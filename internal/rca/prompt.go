@@ -1,7 +1,7 @@
-package rcav2
+package rca
 
 import (
-	"embed"
+	_ "embed"
 	"encoding/json"
 	"sort"
 	"strings"

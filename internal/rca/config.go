@@ -1,4 +1,4 @@
-package rcav2
+package rca
 
 // ScoreWeights 控制各指标权重。
 type ScoreWeights struct {

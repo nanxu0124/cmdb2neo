@@ -6,7 +6,7 @@ import (
 
 	"cmdb2neo/internal/cypher"
 	"cmdb2neo/internal/domain"
-	"cmdb2neo/internal/util"
+	"cmdb2neo/pkg/util"
 )
 
 // NodeUpserter 负责批量写入节点。
