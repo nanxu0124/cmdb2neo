@@ -3,9 +3,9 @@ package server
 import (
 	"context"
 	"strings"
-	"time"
 
 	"cmdb2neo/internal/app"
+	"cmdb2neo/internal/job"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -16,15 +16,17 @@ type HTTPServer struct {
 	Logger  *zap.Logger
 	Config  app.Config
 	Service *app.Service
+	Job     *job.Scheduler
 }
 
 // NewHTTPServer 构建 HTTPServer。
-func NewHTTPServer(engine *gin.Engine, logger *zap.Logger, cfg app.Config, svc *app.Service) *HTTPServer {
+func NewHTTPServer(engine *gin.Engine, logger *zap.Logger, cfg app.Config, svc *app.Service, scheduler *job.Scheduler) *HTTPServer {
 	return &HTTPServer{
 		Engine:  engine,
 		Logger:  logger,
 		Config:  cfg,
 		Service: svc,
+		Job:     scheduler,
 	}
 }
 
@@ -35,10 +37,10 @@ func (s *HTTPServer) Run(ctx context.Context) error {
 		listen = ":8080"
 	}
 
-	var cancelScheduler context.CancelFunc = func() {}
-	if interval := time.Duration(s.Config.Sync.IntervalSeconds) * time.Second; interval > 0 {
-		cancelScheduler = startSyncScheduler(ctx, s.Logger, interval)
-		defer cancelScheduler()
+	cancelJob := func() {}
+	if s.Job != nil {
+		cancelJob = s.Job.Start(ctx)
+		defer cancelJob()
 	}
 
 	if s.Config.Sync.InitialResync && s.Service != nil {
@@ -69,29 +71,4 @@ func (s *HTTPServer) Shutdown(ctx context.Context) {
 	if s.Logger != nil {
 		_ = s.Logger.Sync()
 	}
-}
-
-func startSyncScheduler(parent context.Context, logger *zap.Logger, interval time.Duration) context.CancelFunc {
-	if interval <= 0 {
-		return func() {}
-	}
-	ctx, cancel := context.WithCancel(parent)
-	go func() {
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				if logger != nil {
-					logger.Info("scheduled CMDB sync (mock)")
-				}
-			case <-ctx.Done():
-				if logger != nil {
-					logger.Info("sync scheduler stopped")
-				}
-				return
-			}
-		}
-	}()
-	return cancel
 }

@@ -58,7 +58,8 @@ func InitApp(ctx context.Context) (*server.HTTPServer, func(), error) {
 	}
 	rcaHandler := ioc.InitRCAHandler(analyzer, logger)
 	engine := ioc.InitGinEngine(rcaHandler)
-	httpServer := server.NewHTTPServer(engine, logger, cfg, appService)
+	scheduler := ioc.InitScheduler(cfg, logger)
+	httpServer := server.NewHTTPServer(engine, logger, cfg, appService, scheduler)
 	cleanup := func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()

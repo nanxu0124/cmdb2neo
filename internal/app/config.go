@@ -21,6 +21,7 @@ type Sync struct {
 	Retry           Retry      `yaml:"retry"`
 	InitialResync   bool       `yaml:"initial_resync"`
 	IntervalSeconds int        `yaml:"interval_seconds"`
+	JobCron         string     `yaml:"job_cron"`
 	Source          SyncSource `yaml:"source"`
 }
 
