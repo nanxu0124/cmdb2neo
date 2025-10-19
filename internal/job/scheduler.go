@@ -21,8 +21,11 @@ type Scheduler struct {
 }
 
 // NewScheduler 根据配置构建调度器。
-func NewScheduler(cfg app.Config, logger *zap.Logger) *Scheduler {
-	spec := strings.TrimSpace(cfg.Sync.JobCron)
+func NewScheduler(cfg *app.Config, logger *zap.Logger) *Scheduler {
+	spec := ""
+	if cfg != nil {
+		spec = strings.TrimSpace(cfg.Sync.JobCron)
+	}
 	if spec == "" {
 		spec = defaultCronSpec
 	}

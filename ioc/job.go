@@ -7,6 +7,6 @@ import (
 )
 
 // InitScheduler 构建定时任务调度器。
-func InitScheduler(cfg app.Config, logger *zap.Logger) *job.Scheduler {
+func InitScheduler(cfg *app.Config, logger *zap.Logger) *job.Scheduler {
 	return job.NewScheduler(cfg, logger)
 }

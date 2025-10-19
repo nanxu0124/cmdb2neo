@@ -12,7 +12,7 @@ import (
 
 // Service 负责装配各个 Flow 并提供统一入口。
 type Service struct {
-	cfg           Config
+	cfg           *Config
 	cmdbClient    cmdb.Client
 	neoClient     *loader.Client
 	InitFlow      *InitFlow
@@ -22,9 +22,12 @@ type Service struct {
 }
 
 // NewService 根据配置构建 Service。
-func NewService(ctx context.Context, cfg Config, cmdbClient cmdb.Client) (*Service, error) {
+func NewService(ctx context.Context, cfg *Config, cmdbClient cmdb.Client) (*Service, error) {
 	if cmdbClient == nil {
 		return nil, fmt.Errorf("必须提供 cmdb client")
+	}
+	if cfg == nil {
+		return nil, fmt.Errorf("config is nil")
 	}
 	logger, err := logging.NewZpaLogger()
 	if err != nil {

@@ -17,6 +17,6 @@ func SetConfigPath(path string) {
 }
 
 // InitConfig 读取应用配置。
-func InitConfig() (app.Config, error) {
+func InitConfig() (*app.Config, error) {
 	return app.LoadConfig(configPath)
 }

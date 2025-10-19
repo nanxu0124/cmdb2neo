@@ -51,14 +51,14 @@ type SyncSource struct {
 }
 
 // LoadConfig 从文件加载配置。
-func LoadConfig(path string) (Config, error) {
-	var cfg Config
+func LoadConfig(path string) (*Config, error) {
+	cfg := new(Config)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return cfg, fmt.Errorf("读取配置失败: %w", err)
+		return nil, fmt.Errorf("读取配置失败: %w", err)
 	}
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return cfg, fmt.Errorf("解析配置失败: %w", err)
+	if err := yaml.Unmarshal(data, cfg); err != nil {
+		return nil, fmt.Errorf("解析配置失败: %w", err)
 	}
 	return cfg, nil
 }

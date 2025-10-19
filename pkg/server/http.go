@@ -14,13 +14,13 @@ import (
 type HTTPServer struct {
 	Engine  *gin.Engine
 	Logger  *zap.Logger
-	Config  app.Config
+	Config  *app.Config
 	Service *app.Service
 	Job     *job.Scheduler
 }
 
 // NewHTTPServer 构建 HTTPServer。
-func NewHTTPServer(engine *gin.Engine, logger *zap.Logger, cfg app.Config, svc *app.Service, scheduler *job.Scheduler) *HTTPServer {
+func NewHTTPServer(engine *gin.Engine, logger *zap.Logger, cfg *app.Config, svc *app.Service, scheduler *job.Scheduler) *HTTPServer {
 	return &HTTPServer{
 		Engine:  engine,
 		Logger:  logger,
@@ -32,7 +32,10 @@ func NewHTTPServer(engine *gin.Engine, logger *zap.Logger, cfg app.Config, svc *
 
 // Run 启动 HTTP 服务及相关后台任务。
 func (s *HTTPServer) Run(ctx context.Context) error {
-	listen := strings.TrimSpace(s.Config.HTTP.Listen)
+	listen := ""
+	if s.Config != nil {
+		listen = strings.TrimSpace(s.Config.HTTP.Listen)
+	}
 	if listen == "" {
 		listen = ":8080"
 	}
@@ -43,7 +46,11 @@ func (s *HTTPServer) Run(ctx context.Context) error {
 		defer cancelJob()
 	}
 
-	if s.Config.Sync.InitialResync && s.Service != nil {
+	initialResync := false
+	if s.Config != nil {
+		initialResync = s.Config.Sync.InitialResync
+	}
+	if initialResync && s.Service != nil {
 		if err := s.Service.Init(ctx); err != nil {
 			if s.Logger != nil {
 				s.Logger.Error("initial CMDB sync failed", zap.Error(err))

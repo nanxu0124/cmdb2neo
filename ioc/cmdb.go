@@ -9,11 +9,14 @@ import (
 )
 
 // InitCMDBClient 构建 CMDB 数据源客户端。
-func InitCMDBClient(cfg app.Config) (cmdb.Client, error) {
+func InitCMDBClient(cfg *app.Config) (cmdb.Client, error) {
 	return newCmdbClient(cfg)
 }
 
-func newCmdbClient(cfg app.Config) (cmdb.Client, error) {
+func newCmdbClient(cfg *app.Config) (cmdb.Client, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("config is nil")
+	}
 	baseURL := strings.TrimSpace(cfg.Sync.Source.BaseURL)
 	if baseURL == "" {
 		if cfg.Sync.InitialResync {

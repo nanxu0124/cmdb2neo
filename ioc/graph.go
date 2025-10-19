@@ -2,13 +2,17 @@ package ioc
 
 import (
 	"context"
+	"fmt"
 
 	"cmdb2neo/internal/app"
 	"cmdb2neo/internal/graph"
 )
 
 // InitGraphClient 构建只读图数据库客户端。
-func InitGraphClient(ctx context.Context, cfg app.Config) (*graph.Client, error) {
+func InitGraphClient(ctx context.Context, cfg *app.Config) (*graph.Client, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("config is nil")
+	}
 	return graph.NewClient(ctx, graph.Config{
 		URI:                  cfg.Neo4j.URI,
 		Username:             cfg.Neo4j.Username,
