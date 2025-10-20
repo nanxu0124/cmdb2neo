@@ -57,12 +57,21 @@ func NewService(ctx context.Context, cfg Config, cmdbClient cmdb.Client) (*Servi
 		Logger: logger,
 	}
 
+	syncFlow := &SyncFlow{
+		CMDB:    cmdbClient,
+		Nodes:   nodeUpserter,
+		Rels:    relUpserter,
+		Fixer:   edgeFixer,
+		Cleaner: loader.NewCleaner(neoClient),
+		Logger:  logger,
+	}
+
 	svc := &Service{
 		cfg:           cfg,
 		cmdbClient:    cmdbClient,
 		neoClient:     neoClient,
 		InitFlow:      initFlow,
-		SyncFlow:      &SyncFlow{Logger: logger},
+		SyncFlow:      syncFlow,
 		ReconcileFlow: &ReconcileFlow{Logger: logger},
 		logger:        logger,
 	}
