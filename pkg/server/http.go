@@ -17,16 +17,22 @@ type HTTPServer struct {
 	Config  *app.Config
 	Service *app.Service
 	Job     *job.Scheduler
+	Hourly  *job.HourlyLogger
 }
 
 // NewHTTPServer 构建 HTTPServer。
+<<<<<<< HEAD
 func NewHTTPServer(engine *gin.Engine, logger *zap.Logger, cfg *app.Config, svc *app.Service, scheduler *job.Scheduler) *HTTPServer {
+=======
+func NewHTTPServer(engine *gin.Engine, logger *zap.Logger, cfg app.Config, svc *app.Service, scheduler *job.Scheduler, hourly *job.HourlyLogger) *HTTPServer {
+>>>>>>> recovery-branch
 	return &HTTPServer{
 		Engine:  engine,
 		Logger:  logger,
 		Config:  cfg,
 		Service: svc,
 		Job:     scheduler,
+		Hourly:  hourly,
 	}
 }
 
@@ -44,6 +50,11 @@ func (s *HTTPServer) Run(ctx context.Context) error {
 	if s.Job != nil {
 		cancelJob = s.Job.Start(ctx)
 		defer cancelJob()
+	}
+	cancelHourly := func() {}
+	if s.Hourly != nil {
+		cancelHourly = s.Hourly.Start(ctx)
+		defer cancelHourly()
 	}
 
 	initialResync := false

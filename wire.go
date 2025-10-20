@@ -19,10 +19,11 @@ func InitApp(ctx context.Context) (*server.HTTPServer, func(), error) {
 		ioc.InitGraphClient,
 		ioc.InitRCAConfig,
 		ioc.InitRCAProvider,
-	ioc.InitRCAAnalyzer,
-	ioc.InitRCAHandler,
-	ioc.InitGinEngine,
-	ioc.InitScheduler,
-	server.NewHTTPServer,
+		ioc.InitRCAAnalyzer,
+		ioc.InitRCAHandler,
+		ioc.InitGinEngine,
+		ioc.InitScheduler,
+		ioc.InitHourlyLogger,
+		server.NewHTTPServer,
 	))
 }
